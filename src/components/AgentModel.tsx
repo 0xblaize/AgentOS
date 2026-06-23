@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useGLTF, useAnimations } from '@react-three/drei'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { AgentState, CLIP_INDEX, ONCE_STATES, FADE } from '@/lib/clips'
 
@@ -154,8 +155,43 @@ export default function AgentModel({ state, targetHeight = 1.8 }: AgentModelProp
     // play — eliminates the T-pose flash during the reveal.
     if (mixer) mixer.update(0)
 
+    // ALSO force every SkinnedMesh to push the new bone transforms into its
+    // boneMatrices buffer. The renderer normally calls `skeleton.update()`
+    // inside its skinned-mesh pre-render step, but it skips invisible
+    // meshes. The agent is invisible during intro, so without this manual
+    // call the GPU buffer stays at bind pose (T-pose) — and the first paint
+    // after the box bursts shows that stale bind pose for one frame.
+    scene.traverse((o) => {
+      const sm = o as THREE.SkinnedMesh
+      if (sm.isSkinnedMesh) sm.skeleton.update()
+    })
+
     current.current = state
   }, [state, actions, names, mixer])
+
+  // Force skinning every frame, even when the agent group is invisible.
+  //
+  // three.js calls skeleton.update() inside WebGLRenderer's onBeforeRender for
+  // skinned meshes — but ONLY for meshes that pass visibility culling. While
+  // `visible={false}` is set on a parent group during intro, the boneMatrices
+  // GPU buffer NEVER receives the mixer's pose updates. The first frame after
+  // we flip visibility on then renders the stale bind pose (T-pose) for one
+  // paint before the next render catches up.
+  //
+  // This was asymmetric before: scrolling DOWN, state stays 'stand_idle' the
+  // whole intro→morph traversal so the useLayoutEffect above never re-fires,
+  // and the buffer is untouched. Scrolling UP, walk→stand_idle is a real state
+  // change, the effect fires, and the buffer gets populated before paint.
+  //
+  // Pumping skeleton.update() every frame here closes the gap in both
+  // directions: the buffer is always one frame fresh, so the first VISIBLE
+  // paint already shows the breathing pose.
+  useFrame(() => {
+    scene.traverse((o) => {
+      const sm = o as THREE.SkinnedMesh
+      if (sm.isSkinnedMesh) sm.skeleton.update()
+    })
+  })
 
   // Outer group = animation mixer root. Inner group carries the auto-fit
   // transform so the loaded scene's own matrices stay untouched (skinning safe).
