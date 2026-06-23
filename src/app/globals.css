@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,20 +6,23 @@
 
 html {
   scroll-behavior: auto;
-  background: #000;
+  background: #0b0d12;
 }
 
 body {
-  background: #000;
-  color: #fff;
+  background: #0b0d12;
+  color: #e2e6ee;
   overflow-x: hidden;
-  font-family: 'DM Mono', monospace;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'cv02', 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Thin acid scrollbar — no other scroll clutter */
-::-webkit-scrollbar { width: 2px; }
-::-webkit-scrollbar-track { background: #000; }
-::-webkit-scrollbar-thumb { background: rgba(200, 255, 0, 0.3); }
+/* Slim scrollbar that doesn't fight the palette */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.16); }
 
 /* Prevent a flash of un-positioned content before JS hydrates the stage */
 .stage-hidden { visibility: hidden; }

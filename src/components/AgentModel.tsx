@@ -71,33 +71,48 @@ export default function AgentModel({ state, targetHeight = 1.8 }: AgentModelProp
     scene.scale.setScalar(1)
     scene.position.set(0, 0, 0)
     scene.rotation.set(0, 0, 0)
-
-    // Measure bone world positions at the scene's natural (unmodified) state.
     scene.updateWorldMatrix(true, true)
+
+    // Measure bones in SCENE-LOCAL coordinates, not world coordinates. The
+    // outer agent group sits at STAIR_TOP (≈y=3.36); using bone.getWorldPosition
+    // here folds that offset into the box, which then made pos.y ≈ -300 and
+    // sent the character far below the floor. Pre-multiplying by
+    // scene.matrixWorld.invert() strips the parent transform so the resulting
+    // box reflects the model's own bind-pose extents.
+    const sceneInv = new THREE.Matrix4().copy(scene.matrixWorld).invert()
     const box = new THREE.Box3()
     const p = new THREE.Vector3()
     let bones = 0
     scene.traverse((o) => {
       if ((o as THREE.Bone).isBone) {
         o.getWorldPosition(p)
+        p.applyMatrix4(sceneInv)
         box.expandByPoint(p)
         bones++
       }
     })
-    if (bones === 0) box.setFromObject(scene)
+    if (bones === 0) {
+      box.setFromObject(scene)
+      // setFromObject is also in world space — strip the parent offset.
+      box.min.applyMatrix4(sceneInv)
+      box.max.applyMatrix4(sceneInv)
+    }
 
     const size = new THREE.Vector3()
     box.getSize(size)
     const center = new THREE.Vector3()
     box.getCenter(center)
 
-    if (size.y > 1e-6) {
+    if (size.y > 1e-6 && Number.isFinite(size.y)) {
       const k = targetHeight / size.y
-      // Centre X/Z over the origin and drop the lowest bone to y≈0 (feet down).
       setFit({
         scale: k,
         pos: [-center.x * k, -box.min.y * k, -center.z * k],
       })
+    } else {
+      // Last-ditch fallback if even bone traversal yields nothing usable.
+      // 90 ≈ 1.8 / 0.02, matching the previously fingerprinted Mixamo rig.
+      setFit({ scale: 90, pos: [0, 0, 0] })
     }
   }, [scene, targetHeight])
 

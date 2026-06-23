@@ -1,6 +1,8 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useScrollPhase, usePersistence } from '@/hooks/useAgentOS'
 import { PHASE, PHASE_COUNT } from '@/lib/phases'
 import PhaseStage from '@/components/PhaseStage'
@@ -9,6 +11,7 @@ import Terminal from '@/components/Terminal'
 import GetStartedButton from '@/components/GetStartedButton'
 
 export default function AgentOSPage() {
+  const router = useRouter()
   const { containerRef, phase, phaseProgress } = useScrollPhase()
   usePersistence() // remembers visit + restores scroll position
 
@@ -64,7 +67,15 @@ export default function AgentOSPage() {
           <Terminal active={phase === PHASE.fusion} />
 
           {/* ── Phase 5: the one and only CTA ── */}
-          <GetStartedButton visible={showCTA} onClick={() => { /* route to app */ }} />
+          <GetStartedButton visible={showCTA} onClick={() => router.push('/dashboard')} />
+
+          {/* ── Persistent skip control — bails straight to the app ── */}
+          <Link
+            href="/dashboard"
+            className="pointer-events-auto absolute right-6 top-6 z-50 rounded-full border border-acid/40 bg-black/40 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.3em] text-acid/80 backdrop-blur transition hover:bg-acid hover:text-black"
+          >
+            Skip intro →
+          </Link>
 
           {/* ── Scroll hint — only at the very start, no other clutter ── */}
           <AnimatePresence>

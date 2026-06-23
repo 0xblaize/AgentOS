@@ -62,10 +62,11 @@ export default function AgentCanvas({ phase, phaseProgress }: AgentCanvasProps) 
   return (
     <Canvas
       shadows
-      // Capped DPR + power preference keep GPU memory down so the WebGL context
-      // doesn't get lost (two canvases + studio HDRs + a 126k-vert mesh add up).
+      // Capped DPR keeps GPU memory in check on integrated/Windows GPUs.
+      // Earlier we had two Canvases competing for context slots — now there's
+      // just this one so we can spend a bit more, but still stay conservative.
       dpr={[1, 1.5]}
-      camera={{ position: [3, 2.5, 6], fov: 38 }}
+      camera={{ position: [0, 0.5, 5], fov: 42 }}
       gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, powerPreference: 'high-performance' }}
       style={{ position: 'absolute', inset: 0 }}
     >

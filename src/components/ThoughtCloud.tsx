@@ -53,8 +53,11 @@ export default function ThoughtCloud({ show, headY = 1.8 }: ThoughtCloudProps) {
     const t = state.clock.elapsedTime
     // Small overall scale — this is a little bubble, not a billboard panel.
     group.current.scale.setScalar(THREE.MathUtils.lerp(0.4, 0.62, show))
-    group.current.position.y = headY + 0.7 + Math.sin(t * 0.9) * 0.03
-    group.current.position.x = 0.55 // sits up and to the side, off the head
+    // Sit just above the head (small offset) and to the side. Previous +0.7
+    // put it near the top of the screen because the agent stands high on the
+    // stairs — keep it visually tethered to the character instead.
+    group.current.position.y = headY + 0.05 + Math.sin(t * 0.9) * 0.03
+    group.current.position.x = 0.7
   })
 
   if (show <= 0.01) return null
