@@ -49,11 +49,11 @@ export default function ThoughtCloud({ show, headY = 1.8 }: ThoughtCloudProps) {
   useFrame((state) => {
     if (!group.current) return
     const t = state.clock.elapsedTime
-    // Small bubble centered directly above the head — user asked for "from
-    // the head up" framing (not off to the side).
-    group.current.scale.setScalar(THREE.MathUtils.lerp(0.28, 0.42, show))
-    group.current.position.y = headY + 0.65 + Math.sin(t * 0.9) * 0.03
-    group.current.position.x = 0
+    // Small bubble pinned to the right of the head, very close — the trail
+    // puffs (down-left in local coords) lean back toward the head.
+    group.current.scale.setScalar(THREE.MathUtils.lerp(0.28, 0.4, show))
+    group.current.position.y = headY + 0.35 + Math.sin(t * 0.9) * 0.02
+    group.current.position.x = 0.55
   })
 
   if (show <= 0.01) return null

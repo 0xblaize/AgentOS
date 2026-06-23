@@ -51,20 +51,20 @@ export default function PreviewMannequin({ phase, phaseProgress }: PreviewManneq
           y: drop, // down the stairs + into the chair
           scale: 1 - shrinkStairs - sitting * 0.12,
           opacity: born ? dim + fusion * 0.55 : 0,
-          filter: `drop-shadow(0 0 ${10 + fusion * 50}px rgba(200,255,0,${0.2 + fusion * 0.6}))`,
+          filter: `drop-shadow(0 0 ${10 + fusion * 50}px rgba(163,230,53,${0.2 + fusion * 0.6}))`,
         }}
         transition={{ type: 'spring', stiffness: 90, damping: 18 }}
       >
         {/* head */}
-        <circle cx="60" cy="28" r="20" fill="#c8ff00" />
+        <circle cx="60" cy="28" r="20" fill="#a3e635" />
         {/* torso */}
-        <rect x="38" y="52" width="44" height="74" rx="16" fill="#c8ff00" />
+        <rect x="38" y="52" width="44" height="74" rx="16" fill="#a3e635" />
         {/* arms */}
-        <rect x="20" y="56" width="14" height="60" rx="7" fill="#c8ff00" opacity="0.85" />
-        <rect x="86" y="56" width="14" height="60" rx="7" fill="#c8ff00" opacity="0.85" />
+        <rect x="20" y="56" width="14" height="60" rx="7" fill="#a3e635" opacity="0.85" />
+        <rect x="86" y="56" width="14" height="60" rx="7" fill="#a3e635" opacity="0.85" />
         {/* legs */}
-        <rect x="42" y="128" width="14" height="70" rx="7" fill="#c8ff00" opacity="0.9" />
-        <rect x="64" y="128" width="14" height="70" rx="7" fill="#c8ff00" opacity="0.9" />
+        <rect x="42" y="128" width="14" height="70" rx="7" fill="#a3e635" opacity="0.9" />
+        <rect x="64" y="128" width="14" height="70" rx="7" fill="#a3e635" opacity="0.9" />
       </motion.svg>
 
       {/* fusion ring — a hint of the "everything merges into one" beat */}

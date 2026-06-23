@@ -11,7 +11,7 @@ import Web3Provider from '@/providers/Web3Provider'
 const DashboardShell = dynamic(() => import('@/components/dashboard/DashboardShell'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-screen w-full items-center justify-center bg-black">
+    <div className="flex h-screen w-full items-center justify-center bg-surface-0">
       <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-acid/70">
         booting agent.os…
       </span>

@@ -119,8 +119,8 @@ export default function DashboardAgentScene({ state, screenGlow }: Props) {
 
   return (
     <>
-      <color attach="background" args={['#0b0d12']} />
-      <fog attach="fog" args={['#0b0d12', 5, 14]} />
+      <color attach="background" args={['#09090b']} />
+      <fog attach="fog" args={['#09090b', 5, 14]} />
 
       {/* Lighting tuned so the agent reads cleanly without harsh acid spill. */}
       <ambientLight intensity={0.35} />

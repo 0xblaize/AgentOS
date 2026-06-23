@@ -88,7 +88,7 @@ export default function WalletHub() {
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
-          className="group flex h-10 items-center gap-2.5 rounded-xl bg-acid px-4 text-[12px] font-semibold tracking-tight text-black shadow-[0_8px_24px_-12px_rgba(200,255,0,0.6)] transition hover:bg-[#d9ff33] active:bg-[#b6e600]"
+          className="group flex h-10 items-center gap-2.5 rounded-xl bg-acid px-4 text-[12px] font-semibold tracking-tight text-black shadow-[0_8px_24px_-12px_rgba(163,230,53,0.6)] transition hover:bg-[#bef264] active:bg-[#84cc16]"
         >
           <span className="relative flex h-2 w-2">
             <span className="absolute inset-0 rounded-full bg-black/40 animate-ping" />
@@ -403,7 +403,7 @@ function ConnectorGlyph({ id }: { id: string }) {
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path
           d="M3.5 6.5c2.5-2.5 6.5-2.5 9 0M5.2 8.2c1.55-1.55 4.05-1.55 5.6 0"
-          stroke="#c8ff00"
+          stroke="#a3e635"
           strokeWidth="1.4"
           strokeLinecap="round"
         />
@@ -413,8 +413,8 @@ function ConnectorGlyph({ id }: { id: string }) {
   // Injected / generic
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="2.5" y="4" width="11" height="8" rx="1.5" stroke="#c8ff00" strokeWidth="1.4" />
-      <circle cx="11" cy="8" r="1" fill="#c8ff00" />
+      <rect x="2.5" y="4" width="11" height="8" rx="1.5" stroke="#a3e635" strokeWidth="1.4" />
+      <circle cx="11" cy="8" r="1" fill="#a3e635" />
     </svg>
   )
 }

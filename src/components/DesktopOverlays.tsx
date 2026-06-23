@@ -129,7 +129,7 @@ function Candles() {
       {bars.map((b, i) => {
         const x = 8 + i * 19
         const y = 50 - b.h
-        const color = b.up ? '#c8ff00' : 'rgba(255,255,255,0.25)'
+        const color = b.up ? '#a3e635' : 'rgba(255,255,255,0.25)'
         return (
           <g key={i}>
             <line x1={x} x2={x} y1={y - 6} y2={y + b.h + 4} stroke={color} strokeWidth={1} />

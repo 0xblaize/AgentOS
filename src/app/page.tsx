@@ -26,7 +26,7 @@ export default function AgentOSPage() {
   const showCTA = phase === PHASE.cta && phaseProgress > 0.5
 
   return (
-    <main className="bg-black">
+    <main className="bg-surface-0">
       {/* Tall scroll container: one viewport per phase. The inner stage is
           sticky, so all visuals stay pinned while we scroll through phases. */}
       <div
@@ -72,7 +72,7 @@ export default function AgentOSPage() {
           {/* ── Persistent skip control — bails straight to the app ── */}
           <Link
             href="/dashboard"
-            className="pointer-events-auto absolute right-6 top-6 z-50 rounded-full border border-acid/40 bg-black/40 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.3em] text-acid/80 backdrop-blur transition hover:bg-acid hover:text-black"
+            className="pointer-events-auto absolute right-6 top-6 z-50 rounded-full border border-acid/40 bg-surface-0/60 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.3em] text-acid/80 backdrop-blur transition hover:bg-acid hover:text-black"
           >
             Skip intro →
           </Link>

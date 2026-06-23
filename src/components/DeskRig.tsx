@@ -8,7 +8,7 @@ import * as THREE from 'three'
 export const SEAT_POS = new THREE.Vector3(0, 0, -6.5)
 
 const DARK = { color: '#0a0c10', metalness: 0.8, roughness: 0.3 }
-const ACCENT = { color: '#c8ff00', emissive: '#c8ff00', emissiveIntensity: 1.2, toneMapped: false }
+const ACCENT = { color: '#a3e635', emissive: '#a3e635', emissiveIntensity: 1.2, toneMapped: false }
 
 /**
  * Gaming chair + desk + triple-monitor rig, built from primitives. The agent
@@ -89,7 +89,7 @@ export default function DeskRig({ screenGlow = 0 }: { screenGlow?: number }) {
               <planeGeometry args={[0.72, 0.4]} />
               <meshStandardMaterial
                 color="#0a2a1a"
-                emissive="#c8ff00"
+                emissive="#a3e635"
                 emissiveIntensity={0.25 + screenGlow * 1.6}
                 toneMapped={false}
               />
@@ -102,7 +102,7 @@ export default function DeskRig({ screenGlow = 0 }: { screenGlow?: number }) {
           </group>
         ))}
         {/* screen fill light */}
-        <pointLight position={[0, 1.5, 0.4]} color="#c8ff00" intensity={screenGlow * 3} distance={4} />
+        <pointLight position={[0, 1.5, 0.4]} color="#a3e635" intensity={screenGlow * 3} distance={4} />
       </group>
     </group>
   )

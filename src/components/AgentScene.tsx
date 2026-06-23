@@ -213,27 +213,28 @@ export default function AgentScene({ phase, phaseProgress }: AgentSceneProps) {
         <HeroBox explodeProgress={heroExplode} visible={heroVisible} />
       </group>
 
-      {worldVisible && (
-        <>
-          <Staircase />
-          {deskVisible && <DeskRig screenGlow={screenGlow} />}
+      {worldVisible && <Staircase />}
+      {deskVisible && <DeskRig screenGlow={screenGlow} />}
 
-          <group
-            ref={agentRef}
-            position={[STAIR_TOP.x, STAIR_TOP.y, STAIR_TOP.z]}
-            scale={1.0}
-          >
-            <AgentModel state={state} />
-            <ThoughtCloud show={cloud} />
-          </group>
+      {/* Agent group is ALWAYS mounted so its mixer is warm and animating by
+          the time we reveal it — mounting it fresh at morph-start caused a
+          one-frame bind-pose (T-pose) flash before the first animation tick
+          landed. visible={worldVisible} simply hides it during intro. */}
+      <group
+        ref={agentRef}
+        position={[STAIR_TOP.x, STAIR_TOP.y, STAIR_TOP.z]}
+        visible={worldVisible}
+        scale={1.0}
+      >
+        <AgentModel state={state} />
+        <ThoughtCloud show={cloud} />
+      </group>
 
-          {groundVisible && (
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, -1]} receiveShadow>
-              <planeGeometry args={[40, 40]} />
-              <meshStandardMaterial color="#05060a" metalness={0.4} roughness={0.8} />
-            </mesh>
-          )}
-        </>
+      {groundVisible && (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, -1]} receiveShadow>
+          <planeGeometry args={[40, 40]} />
+          <meshStandardMaterial color="#05060a" metalness={0.4} roughness={0.8} />
+        </mesh>
       )}
     </>
   )

@@ -23,10 +23,12 @@ export type AgentState =
   | 'sit_idle'
   | 'typing'
 
-/** State → clip index inside the GLB's `animations` array. */
+/** State → clip index inside the GLB's `animations` array.
+ *  Clip 9 (3.27s in-place loop) is the arms-down breathing/looking-around
+ *  idle that was added to the rig. */
 export const CLIP_INDEX: Record<AgentState, number> = {
-  stand_idle: 1,
-  thinking: 1, // reuse the standing-idle clip while the thought cloud plays
+  stand_idle: 9,
+  thinking: 9, // reuse the standing-idle clip while the thought cloud plays
   walk: 8,
   sit_down: 5,
   sit_idle: 3,

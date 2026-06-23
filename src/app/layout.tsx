@@ -8,11 +8,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // Inline black background paints BEFORE Tailwind/global CSS loads, killing
-    // the white flash on refresh (during which the white "AGENT" title was
-    // invisible and only the acid ".OS" showed).
-    <html lang="en" style={{ background: '#000' }}>
-      <body style={{ background: '#000' }}>{children}</body>
+    // Inline zinc-950 paints BEFORE Tailwind/global CSS loads, killing the
+    // white flash on refresh and matching Spec §1.1's #09090B base.
+    <html lang="en" style={{ background: '#09090b' }}>
+      <body style={{ background: '#09090b' }}>{children}</body>
     </html>
   )
 }

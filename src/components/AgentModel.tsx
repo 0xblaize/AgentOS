@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useGLTF, useAnimations } from '@react-three/drei'
 import * as THREE from 'three'
 import { AgentState, CLIP_INDEX, ONCE_STATES, FADE } from '@/lib/clips'
@@ -35,7 +35,7 @@ interface Fit {
 export default function AgentModel({ state, targetHeight = 1.8 }: AgentModelProps) {
   const group = useRef<THREE.Group>(null)
   const { scene, animations } = useGLTF('/agent_os.glb')
-  const { actions, names } = useAnimations(animations, group)
+  const { actions, names, mixer } = useAnimations(animations, group)
   const current = useRef<AgentState | null>(null)
 
   const [fit, setFit] = useState<Fit>({ scale: 1, pos: [0, 0, 0] })
@@ -98,9 +98,14 @@ export default function AgentModel({ state, targetHeight = 1.8 }: AgentModelProp
 
     if (size.y > 1e-6 && Number.isFinite(size.y)) {
       const k = targetHeight / size.y
+      // The bone-derived box stops at the ankle joint, but the foot MESH
+      // extends below that. Without this clearance the feet sink into the
+      // pavement. ~6% of body height tracks the ankle-to-sole gap closely
+      // for the Mixamo rig.
+      const FOOT_CLEARANCE = 0.11
       setFit({
         scale: k,
-        pos: [-center.x * k, -box.min.y * k, -center.z * k],
+        pos: [-center.x * k, -box.min.y * k + FOOT_CLEARANCE, -center.z * k],
       })
     } else {
       // Last-ditch fallback if even bone traversal yields nothing usable.
@@ -109,11 +114,13 @@ export default function AgentModel({ state, targetHeight = 1.8 }: AgentModelProp
     }
   }, [scene, targetHeight])
 
-  // Crossfade whenever the requested state changes. On the FIRST play we use
-  // a zero-length fade-in so the model never shows its T-pose / bind-pose
-  // — the previous 0.45s fade-in revealed the unanimated rest pose briefly
-  // when the agent group first mounted, which read as a glitch.
-  useEffect(() => {
+  // Crossfade whenever the requested state changes.
+  //
+  // useLayoutEffect (not useEffect) + an immediate mixer.update(0) so the
+  // FIRST animation frame is applied to the bones BEFORE the browser paints.
+  // Plain useEffect ran one frame too late, leaving a single bind-pose
+  // (T-pose) frame visible during the reveal.
+  useLayoutEffect(() => {
     if (current.current === state) return
 
     const nextName = names[CLIP_INDEX[state]]
@@ -131,12 +138,24 @@ export default function AgentModel({ state, targetHeight = 1.8 }: AgentModelProp
     next.clampWhenFinished = once
     next.enabled = true
     next.setEffectiveWeight(1)
+    // Skip past any T-pose lead-in baked into looping Mixamo clips: jump
+    // 25% into the clip so the first painted frame is mid-breath, not
+    // bind pose. Only matters for looping idles where the seam is hidden.
+    if (!once) {
+      const dur = next.getClip().duration
+      next.time = dur * 0.25
+    }
     next.fadeIn(isFirst ? 0 : FADE).play()
 
     if (prev && prev !== next) prev.fadeOut(FADE)
 
+    // Snap the bones to the first frame of the new clip so the next render
+    // shows the breathing idle instead of the bind pose. Critical on first
+    // play — eliminates the T-pose flash during the reveal.
+    if (mixer) mixer.update(0)
+
     current.current = state
-  }, [state, actions, names])
+  }, [state, actions, names, mixer])
 
   // Outer group = animation mixer root. Inner group carries the auto-fit
   // transform so the loaded scene's own matrices stay untouched (skinning safe).
