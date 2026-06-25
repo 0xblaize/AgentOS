@@ -2,9 +2,12 @@
 
 import { useEffect } from 'react'
 import { useDashboardState } from '@/hooks/dashboard/useDashboardState'
+import { useVaultActions } from '@/hooks/dashboard/useVaultActions'
 
-// Spec §7: Emergency Action Bar. h-14, border-top, four buttons aligned
-// right. Flush · Pause · Reset · Terminate. Each has a keyboard shortcut.
+// Spec §7: Emergency Action Bar. Every button now triggers an on-chain
+// vault tx (and therefore a wallet signature) before its corresponding UI
+// state advances. Flush is the one exception — it only clears the local
+// terminal buffer and stays signature-free.
 
 type Variant = 'danger' | 'neutral' | 'subtle' | 'primary'
 
@@ -17,15 +20,10 @@ interface ButtonProps {
   onClick: () => void
 }
 
-// Spec §7 button visuals — direct color references.
 const VARIANT: Record<Variant, string> = {
-  // 7.1 Flush: transparent bg, white text, 1px zinc-700 border
   subtle: 'border border-[#3f3f46] bg-transparent text-ink hover:bg-surface-2',
-  // 7.2 Pause: dark grey bg, white text
   neutral: 'border border-line bg-surface-2 text-ink hover:bg-[#1f1f23] active:bg-[#141417]',
-  // 7.3 Reset: solid acid, text black
   primary: 'bg-acid text-black hover:bg-[#bef264] active:bg-[#84cc16]',
-  // 7.4 Terminate: solid rose-600, text white
   danger: 'bg-[#e11d48] text-white hover:bg-[#be123c] active:bg-[#9f1239]',
 }
 
@@ -48,10 +46,13 @@ function CtrlButton({ label, shortcut, variant, active, disabled, onClick }: But
 }
 
 export default function ControlStrip() {
-  const { active, paused, terminated, togglePaused, terminate, flushLogs, resetSimulation } =
-    useDashboardState()
+  const { active, paused, terminated, txPhase, flushLogs } = useDashboardState()
+  const { togglePaused, terminate, reset } = useVaultActions()
 
-  // Keyboard shortcuts: T / P / F / R. Ignored while typing in inputs.
+  const txBusy = txPhase === 'approving' || txPhase === 'signing' || txPhase === 'pending'
+
+  // Keyboard shortcuts: T / P / F / R. Ignored while typing in inputs or
+  // while a tx is mid-flight (so users don't accidentally fire two sigs).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (
@@ -61,15 +62,16 @@ export default function ControlStrip() {
       ) {
         return
       }
+      if (txBusy) return
       const k = e.key.toLowerCase()
-      if (k === 't') terminate()
-      else if (k === 'p') togglePaused()
+      if (k === 't') void terminate()
+      else if (k === 'p') void togglePaused()
       else if (k === 'f') flushLogs()
-      else if (k === 'r') resetSimulation()
+      else if (k === 'r') void reset()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [terminate, togglePaused, flushLogs, resetSimulation])
+  }, [terminate, togglePaused, flushLogs, reset, txBusy])
 
   return (
     <footer className="flex h-14 items-center justify-between gap-3 border-t border-line bg-surface-1 px-6">
@@ -77,6 +79,15 @@ export default function ControlStrip() {
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-mute">
           Emergency controls
         </span>
+        {txBusy && (
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-warn">
+            {txPhase === 'approving'
+              ? 'Approve in wallet…'
+              : txPhase === 'signing'
+                ? 'Sign in wallet…'
+                : 'Confirming tx…'}
+          </span>
+        )}
       </div>
       <div className="flex items-center gap-2">
         <CtrlButton
@@ -90,21 +101,23 @@ export default function ControlStrip() {
           shortcut="P"
           variant="neutral"
           active={paused}
-          disabled={!active && !paused}
-          onClick={togglePaused}
+          disabled={(!active && !paused) || txBusy}
+          onClick={() => void togglePaused()}
         />
         <CtrlButton
           label="Reset simulation"
           shortcut="R"
           variant="primary"
-          onClick={resetSimulation}
+          disabled={txBusy}
+          onClick={() => void reset()}
         />
         <CtrlButton
           label={terminated ? 'Agent halted' : 'Terminate agent'}
           shortcut="T"
           variant="danger"
           active={terminated}
-          onClick={terminate}
+          disabled={txBusy || terminated}
+          onClick={() => void terminate()}
         />
       </div>
     </footer>

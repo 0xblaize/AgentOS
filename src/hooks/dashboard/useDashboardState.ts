@@ -56,11 +56,27 @@ export interface Position {
   pnl: number             // unrealized USDT
 }
 
+export type SelectedAsset = 'ETH' | 'USDC'
+
+// On-chain tx phase shown next to the Deploy/Terminate buttons.
+//   idle      — no pending tx
+//   approving — ERC20 approve in progress (USDC path only)
+//   signing   — waiting for wallet signature on the vault call
+//   pending   — submitted, waiting for receipt
+//   error     — last tx failed; lifecycle does NOT advance
+export type TxPhase = 'idle' | 'approving' | 'signing' | 'pending' | 'error'
+
 interface DashboardState {
   // Lifecycle
   lifecycle: AgentLifecycle
+  // Asset chosen for allocated capital (drives MAX + decimals).
+  selectedAsset: SelectedAsset
+  // On-chain tx tracking (drives button labels / disabled state).
+  txPhase: TxPhase
+  txHash: string | null
+  txError: string | null
   // Configuration (Spec §4.1–§4.3)
-  allocatedCapital: number     // mock USDT — locked once deployed
+  allocatedCapital: number     // amount in selectedAsset units (ETH or USDC)
   riskPerTrade: number          // percent, 0.1..5.0
   maxDrawdownPct: number        // percent, kill-switch threshold
   // Market & AI state (fed by useMockEngine — Vol.2 §1.1)
@@ -84,6 +100,8 @@ type Action =
   | { type: 'SET_CAPITAL'; value: number }
   | { type: 'SET_RISK'; value: number }
   | { type: 'SET_DRAWDOWN'; value: number }
+  | { type: 'SET_ASSET'; value: SelectedAsset }
+  | { type: 'TX_PHASE'; phase: TxPhase; hash?: string | null; error?: string | null }
   | { type: 'DEPLOY' }
   | { type: 'TOGGLE_PAUSED' }
   | { type: 'TERMINATE' }
@@ -99,6 +117,10 @@ type Action =
 
 const initial: DashboardState = {
   lifecycle: 'idle',
+  selectedAsset: 'USDC',
+  txPhase: 'idle',
+  txHash: null,
+  txError: null,
   allocatedCapital: 0,
   riskPerTrade: 1.0,
   maxDrawdownPct: 10,
@@ -133,6 +155,18 @@ function reducer(state: DashboardState, action: Action): DashboardState {
       return { ...state, riskPerTrade: clamp(action.value, 0.1, 5.0) }
     case 'SET_DRAWDOWN':
       return { ...state, maxDrawdownPct: clamp(action.value, 1, 100) }
+    case 'SET_ASSET':
+      // Switching asset resets allocated capital — units differ (1.0 ETH ≠ 1.0 USDC).
+      // Locked once a session is live so we don't desync UI from the on-chain vault.
+      if (state.lifecycle !== 'idle') return state
+      return { ...state, selectedAsset: action.value, allocatedCapital: 0 }
+    case 'TX_PHASE':
+      return {
+        ...state,
+        txPhase: action.phase,
+        txHash: action.hash ?? state.txHash,
+        txError: action.error ?? (action.phase === 'error' ? state.txError : null),
+      }
     case 'DEPLOY':
       // Only deploy from idle; ignored otherwise so the button can stay wired
       // to the same handler regardless of state.
@@ -238,6 +272,9 @@ interface DashboardContextValue extends DashboardState {
   setAllocatedCapital: (v: number) => void
   setRiskPerTrade: (v: number) => void
   setMaxDrawdownPct: (v: number) => void
+  setSelectedAsset: (v: SelectedAsset) => void
+  // Tx tracking
+  setTxPhase: (phase: TxPhase, hash?: string | null, error?: string | null) => void
   // Lifecycle actions
   deployAgent: () => void
   togglePaused: () => void
@@ -261,6 +298,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const setAllocatedCapital = useCallback((value: number) => dispatch({ type: 'SET_CAPITAL', value }), [])
   const setRiskPerTrade = useCallback((value: number) => dispatch({ type: 'SET_RISK', value }), [])
   const setMaxDrawdownPct = useCallback((value: number) => dispatch({ type: 'SET_DRAWDOWN', value }), [])
+  const setSelectedAsset = useCallback((value: SelectedAsset) => dispatch({ type: 'SET_ASSET', value }), [])
+  const setTxPhase = useCallback(
+    (phase: TxPhase, hash?: string | null, error?: string | null) =>
+      dispatch({ type: 'TX_PHASE', phase, hash, error }),
+    [],
+  )
   const deployAgent = useCallback(() => dispatch({ type: 'DEPLOY' }), [])
   const togglePaused = useCallback(() => dispatch({ type: 'TOGGLE_PAUSED' }), [])
   const terminate = useCallback(() => dispatch({ type: 'TERMINATE' }), [])
@@ -299,6 +342,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         setAllocatedCapital,
         setRiskPerTrade,
         setMaxDrawdownPct,
+        setSelectedAsset,
+        setTxPhase,
         deployAgent,
         togglePaused,
         terminate,
@@ -317,6 +362,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setAllocatedCapital,
       setRiskPerTrade,
       setMaxDrawdownPct,
+      setSelectedAsset,
+      setTxPhase,
       deployAgent,
       togglePaused,
       terminate,

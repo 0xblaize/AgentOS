@@ -1,15 +1,16 @@
 'use client'
 
 import { useDashboardState } from '@/hooks/dashboard/useDashboardState'
+import { useWalletAssets } from '@/hooks/dashboard/useWalletAssets'
 import TickerStream from './TickerStream'
 import WalletHub from './WalletHub'
 
 // Spec §2: top header h-16. Left = brand, center = system-status text,
-// right = wallet + equity. The center used to host the ticker; per spec it
-// now hosts the status text. The ticker is folded into the wallet/equity
-// rail as a quiet auxiliary row (no real feed yet, so it stays muted).
+// right = wallet + equity. Equity is now the REAL on-chain balance of the
+// user's selected asset (ETH or USDC) on the connected testnet, not a mock.
 export default function HeaderBar() {
-  const { active, paused, terminated, allocatedCapital, cumulativePnl } = useDashboardState()
+  const { active, paused, terminated, selectedAsset } = useDashboardState()
+  const { eth, usdc, chainLabel, isConnected, byAsset } = useWalletAssets()
 
   const statusText = terminated
     ? 'Agent terminated'
@@ -20,6 +21,7 @@ export default function HeaderBar() {
         : 'Awaiting market feed'
 
   const ellipsisOn = active
+  const balance = byAsset(selectedAsset)
 
   return (
     <header className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-6 border-b border-line bg-surface-1 px-6">
@@ -28,8 +30,6 @@ export default function HeaderBar() {
         href="/dashboard"
         className="flex items-center gap-3"
         onClick={(e) => {
-          // Spec §2.1: clicking the brand acts as a hard reload of the
-          // dashboard frontend state. Soft nav would preserve client state.
           e.preventDefault()
           window.location.reload()
         }}
@@ -61,26 +61,50 @@ export default function HeaderBar() {
         <div className="hidden xl:block">
           <TickerStream />
         </div>
-        <EquityTile capital={allocatedCapital} pnl={cumulativePnl} />
+        <BalanceTile
+          balance={balance}
+          alternate={selectedAsset === 'ETH' ? usdc : eth}
+          chainLabel={chainLabel}
+          connected={isConnected}
+        />
         <WalletHub />
       </div>
     </header>
   )
 }
 
-// Spec §2.3: equity = allocated capital + cumulative PNL, recomputed every
-// simulated tick. Color subtly shifts with PNL sign so the user gets a
-// peripheral read on performance without looking down at the cards.
-function EquityTile({ capital, pnl }: { capital: number; pnl: number }) {
-  const equity = capital + pnl
-  const display = capital > 0
-    ? `$${equity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+// Real-balance tile. Top line = chain badge + primary asset; bottom line =
+// secondary asset for at-a-glance "do I have the other token too?". When the
+// wallet isn't connected we render the same shell with em-dashes so the
+// header doesn't shift layout on connect.
+interface BalanceTileProps {
+  balance: { symbol: string; formatted: string; supported: boolean }
+  alternate: { symbol: string; formatted: string; supported: boolean }
+  chainLabel: string
+  connected: boolean
+}
+
+function BalanceTile({ balance, alternate, chainLabel, connected }: BalanceTileProps) {
+  const primary = connected
+    ? balance.supported
+      ? `${balance.formatted} ${balance.symbol}`
+      : `— ${balance.symbol}`
     : '—'
-  const tone = capital === 0 ? 'text-ink' : pnl > 0 ? 'text-profit' : pnl < 0 ? 'text-loss' : 'text-ink'
+  const secondary = connected
+    ? alternate.supported
+      ? `${alternate.formatted} ${alternate.symbol}`
+      : `${alternate.symbol} n/a`
+    : '—'
+
   return (
     <div className="flex h-10 flex-col items-end justify-center rounded-xl border border-line bg-surface-1 px-3.5 leading-none">
-      <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-acid">Equity</span>
-      <span className={`mt-1 font-mono text-[13px] font-semibold ${tone}`}>{display}</span>
+      <div className="flex items-center gap-2">
+        <span className="rounded-sm bg-acid/10 px-1.5 py-[1px] font-mono text-[8.5px] uppercase tracking-[0.18em] text-acid">
+          {connected ? chainLabel : 'No chain'}
+        </span>
+        <span className="font-mono text-[12px] font-semibold text-ink">{primary}</span>
+      </div>
+      <span className="mt-1 font-mono text-[9.5px] text-ink-fade">{secondary}</span>
     </div>
   )
 }
