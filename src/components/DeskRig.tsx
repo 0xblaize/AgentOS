@@ -77,8 +77,11 @@ export default function DeskRig({ screenGlow = 0 }: { screenGlow?: number }) {
         ))}
 
         {/* ── TRIPLE MONITORS ── */}
+        {/* Chair sits south of the desk (at -z) so the screens must face -z.
+            Math.PI flips them around; +x*0.35 toes the side panels back toward
+            the agent so all three angle at the mannequin's face. */}
         {[-0.82, 0, 0.82].map((x, i) => (
-          <group key={i} position={[x, 1.5, -0.1]} rotation={[0, -x * 0.35, 0]}>
+          <group key={i} position={[x, 1.5, -0.1]} rotation={[0, Math.PI + x * 0.35, 0]}>
             {/* bezel */}
             <mesh castShadow>
               <boxGeometry args={[0.78, 0.46, 0.04]} />
@@ -101,8 +104,9 @@ export default function DeskRig({ screenGlow = 0 }: { screenGlow?: number }) {
             </mesh>
           </group>
         ))}
-        {/* screen fill light */}
-        <pointLight position={[0, 1.5, 0.4]} color="#a3e635" intensity={screenGlow * 3} distance={4} />
+        {/* screen fill light — sits between the monitors and the chair so the
+            acid-green glow falls on the mannequin's face, not behind the rig. */}
+        <pointLight position={[0, 1.5, -0.5]} color="#a3e635" intensity={screenGlow * 3} distance={4} />
       </group>
     </group>
   )
