@@ -6,7 +6,8 @@ import { formatUnits } from 'viem'
 import { useDashboardState, type SelectedAsset } from '@/hooks/dashboard/useDashboardState'
 import { useWalletAssets } from '@/hooks/dashboard/useWalletAssets'
 import { useVaultActions } from '@/hooks/dashboard/useVaultActions'
-import { isVaultDeployed } from '@/lib/wagmi'
+import { useTreasuryReadout } from '@/hooks/dashboard/useTreasuryReadout'
+import { chainAssets, isVaultDeployed } from '@/lib/wagmi'
 
 // Spec §4: vertical right-rail. Now wired to real wallet balances. The user
 // picks ETH or USDC; the Allocated Capital input is denominated in that
@@ -30,6 +31,8 @@ export default function ConfigSidebar() {
   } = useDashboardState()
   const { byAsset } = useWalletAssets()
   const { deploy } = useVaultActions()
+  const treasury = useTreasuryReadout()
+  const chainInfo = chainAssets(chainId)
 
   const capitalId = useId()
   const riskId = useId()
@@ -191,6 +194,46 @@ export default function ConfigSidebar() {
       </div>
 
       <div className="flex-1" />
+
+      {/* On-chain settlement readout. Surfaces WHERE losses go and WHAT the
+          win pump has loaded, so the demo can point at it directly. */}
+      {treasury.available && treasury.treasury && (
+        <div className="rounded-md border border-line bg-surface-0/60 p-2.5">
+          <div className="flex items-center justify-between text-[9.5px] uppercase tracking-[0.18em] text-ink-mute">
+            <span>Settlement</span>
+            {chainInfo && (
+              <a
+                href={`${chainInfo.explorer}/address/${treasury.treasury}`}
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-[9px] text-acid/80 transition hover:text-acid"
+              >
+                view ↗
+              </a>
+            )}
+          </div>
+          <div className="mt-1.5 flex flex-col gap-1 text-[10.5px]">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-loss/80">Loss sink</span>
+              <span className="truncate font-mono text-[10px] text-ink-dim" title={treasury.treasury}>
+                {treasury.treasury.slice(0, 6)}…{treasury.treasury.slice(-4)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-profit/80">Win pump · ETH</span>
+              <span className="font-mono text-[10px] text-ink">
+                {treasury.houseEthFormatted}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-profit/80">Win pump · {treasury.usdcSymbol}</span>
+              <span className="font-mono text-[10px] text-ink">
+                {treasury.usdcPumpFormatted}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pre-flight: now reports wallet + vault + asset + tx phase. */}
       <div className="rounded-md border border-line bg-surface-0/60 p-3">

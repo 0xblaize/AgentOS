@@ -174,6 +174,38 @@ export function useVaultActions() {
     }
   }, [assets, chainId, config, paused, writeContractAsync, setTxPhase, dispatchTogglePaused, failed])
 
+  // ── Close trade ──────────────────────────────────────────────────────
+  // Settles a trade's PnL on-chain. Loss → vault transfers |pnl| to treasury,
+  // user balance shrinks. Win → vault pulls pnl from treasury (USDC) or from
+  // the houseEth pool (ETH), user balance grows.
+  //
+  // `pnl` MUST be in the same raw token units as the deposit asset (wei for
+  // ETH, 6dp for USDC, etc.) — not USD-denominated PnL from the UI.
+  const closeTrade = useCallback(
+    async (id: `0x${string}`, exitPrice: bigint, pnl: bigint, reason: string) => {
+      if (!assets || assets.vault === ZERO) {
+        setTxPhase('error', null, 'Vault not deployed on this chain.')
+        return
+      }
+      try {
+        setTxPhase('signing')
+        const hash = await writeContractAsync({
+          abi: agentVaultAbi,
+          address: assets.vault,
+          functionName: 'closeTrade',
+          args: [id, exitPrice, pnl, reason],
+          chainId,
+        })
+        setTxPhase('pending', hash)
+        await waitForTransactionReceipt(config, { hash, chainId })
+        setTxPhase('idle', hash, null)
+      } catch (e) {
+        failed('closeTrade', e)
+      }
+    },
+    [assets, chainId, config, writeContractAsync, setTxPhase, failed],
+  )
+
   // ── Reset simulation: terminates if a session exists, then wipes UI ──
   const reset = useCallback(async () => {
     try {
@@ -202,5 +234,5 @@ export function useVaultActions() {
     }
   }, [assets, chainId, config, writeContractAsync, setTxPhase, dispatchReset, failed])
 
-  return { deploy, terminate, togglePaused, reset }
+  return { deploy, terminate, togglePaused, reset, closeTrade }
 }
