@@ -77,12 +77,15 @@ export default function DeskRig({ screenGlow = 0 }: { screenGlow?: number }) {
         ))}
 
         {/* ── TRIPLE MONITORS ── */}
-        {/* Screens face +z so they're visible to the cinematic camera (which
-            sits at +x/+z of the seat). Side panels toe inward (-x*0.35) so all
-            three angle toward the center where the agent sits. Mirrors the
+        {/* Agent sits at SEAT_POS (chair center, group origin), desk group is
+            at +z 0.95. Monitors sit on the chair-facing edge of the desktop,
+            so their screens must face world -Z (back toward the chair).
+            Math.PI on the Y rotation flips the planeGeometry's outward
+            normal (+Z by default) to point -Z. The +x*0.35 toe-in then
+            angles the side monitors inward toward the agent. Mirrors the
             working DashboardAgentScene layout. */}
         {[-0.82, 0, 0.82].map((x, i) => (
-          <group key={i} position={[x, 1.5, 0.18]} rotation={[0, -x * 0.35, 0]}>
+          <group key={i} position={[x, 1.5, -0.18]} rotation={[0, Math.PI + x * 0.35, 0]}>
             {/* bezel */}
             <mesh castShadow>
               <boxGeometry args={[0.78, 0.46, 0.04]} />
@@ -105,9 +108,10 @@ export default function DeskRig({ screenGlow = 0 }: { screenGlow?: number }) {
             </mesh>
           </group>
         ))}
-        {/* Screen fill light — sits in front of the monitors so the acid-green
-            spill lands on the seat / agent face, not into the void behind. */}
-        <pointLight position={[0, 1.5, 0.45]} color="#a3e635" intensity={screenGlow * 3} distance={4} />
+        {/* Screen fill light — sits on the chair side of the monitors so the
+            acid-green spill lands on the seat / agent face, not into the void
+            behind the desk. */}
+        <pointLight position={[0, 1.5, -0.45]} color="#a3e635" intensity={screenGlow * 3} distance={4} />
       </group>
     </group>
   )
